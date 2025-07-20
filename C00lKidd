@@ -1,0 +1,48 @@
+local plrs = game:GetService("Players")
+local RS = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local cam = workspace.CurrentCamera
+local lp = plrs.LocalPlayer
+
+local fov = Drawing.new("Circle")
+fov.Color = Color3.fromRGB(0, 255, 0)
+fov.Thickness = 2
+fov.NumSides = 100
+fov.Radius = 100
+fov.Filled = false
+fov.Visible = true
+
+RS.RenderStepped:Connect(function()
+	local mouse = UIS:GetMouseLocation()
+	local center = Vector2.new(mouse.X, mouse.Y)
+	fov.Position = center
+
+	local closest = nil
+	local dist = math.huge
+	local targetScreen = nil
+
+	for _, p in ipairs(plrs:GetPlayers()) do
+		if p ~= lp and p.TeamColor ~= lp.TeamColor and p.Character then
+			local head = p.Character:FindFirstChild("Head") or p.Character:FindFirstChild("FakeHead")
+			if head then
+				local pos, onScreen = cam:WorldToViewportPoint(head.Position)
+				if onScreen then
+					local vec = Vector2.new(pos.X, pos.Y)
+					local mag = (vec - center).Magnitude
+					if mag <= fov.Radius and mag < dist then
+						dist = mag
+						closest = head
+						targetScreen = vec
+					end
+				end
+			end
+		end
+	end
+
+	if closest and targetScreen then
+		local camPos = cam.CFrame.Position
+		local targetPos = closest.Position
+		local lookAt = CFrame.new(camPos, targetPos)
+		cam.CFrame = cam.CFrame:Lerp(lookAt, 0.6)  
+	end
+end)
